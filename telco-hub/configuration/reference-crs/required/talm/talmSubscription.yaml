@@ -8,5 +8,5 @@ spec:
   channel: stable
   installPlanApproval: Automatic
   name: topology-aware-lifecycle-manager
-  source: redhat-operators-disconnected
+  source: redhat-operators
   sourceNamespace: openshift-marketplace

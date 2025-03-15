@@ -8,5 +8,5 @@ spec:
   channel: gitops-1.13
   installPlanApproval: Automatic
   name: openshift-gitops-operator
-  source: redhat-operators-disconnected
+  source: redhat-operators
   sourceNamespace: openshift-marketplace
