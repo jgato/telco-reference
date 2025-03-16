@@ -33,13 +33,13 @@ spec:
   storageConfig:
     storageClass: "ocs-storagecluster-ceph-rgw"
     alertmanagerStorageSize: 10Gi
-    compactStorageSize: 100Gi
+    compactStorageSize: 10Gi
     metricObjectStorage:
       key: thanos.yaml
       name: thanos-object-storage
     receiveStorageSize: 10Gi
-    ruleStorageSize: 30Gi
-    storeStorageSize: 100Gi
+    ruleStorageSize: 10Gi
+    storeStorageSize: 10Gi
     # In addition to these storage settings, the `metricObjectStorage`
     # points to an Object Storage. Under the reference configuration,
     # scale and retention the estimated object storage is about 101Gi
