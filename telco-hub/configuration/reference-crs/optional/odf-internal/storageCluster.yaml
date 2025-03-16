@@ -26,7 +26,7 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-            storage: "600Gi"  # <-- This should be changed as per storage size. Minimum 100 GiB and Maximum 4 TiB
+            storage: "100Gi"  # <-- This should be changed as per storage size. Minimum 100 GiB and Maximum 4 TiB
         storageClassName: "local-sc"  # match this with the storage block created at the LSO step
         volumeMode: Block
     name: ocs-deviceset
