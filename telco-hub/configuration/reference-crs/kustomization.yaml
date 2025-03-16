@@ -11,4 +11,4 @@ resources:
   # Include this content if you want to include the argocd
   # configuration and apps for gitops ztp management of cluster
   # installation and configuration
-  # - required/gitops/ztp-installation
+  - required/gitops/ztp-installation
