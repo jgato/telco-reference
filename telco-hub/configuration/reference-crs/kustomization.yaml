@@ -12,3 +12,11 @@ resources:
   # configuration and apps for gitops ztp management of cluster
   # installation and configuration
   - required/gitops/ztp-installation
+
+patches:
+  - target:
+      group: observability.open-cluster-management.io
+      version: v1beta2
+      kind: MultiClusterObservability
+      name: observability
+    path: overlays/storage-mco-patch.yaml
