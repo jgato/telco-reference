@@ -31,7 +31,7 @@ spec:
     enableMetrics: true
     interval: 300
   storageConfig:
-    storageClass: "ocs-storagecluster-cephfs"
+    storageClass: # set your class here
     alertmanagerStorageSize: 10Gi
     compactStorageSize: 10Gi
     metricObjectStorage:
