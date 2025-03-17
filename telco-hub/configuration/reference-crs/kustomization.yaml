@@ -20,3 +20,9 @@ patches:
       kind: MultiClusterObservability
       name: observability
     path: overlays/storage-mco-patch.yaml
+  - target:
+      group: agent-install.openshift.io
+      version: v1beta1
+      kind: AgentServiceConfig
+      name: agent
+    path: overlays/options-agentserviceconfig-patch.yaml
