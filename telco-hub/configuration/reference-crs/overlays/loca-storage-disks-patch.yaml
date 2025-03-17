@@ -1,6 +1,6 @@
 - op: replace
-  path: "spec/storageClassDevices"
-  value: #
+  path: "/spec/storageClassDevices"
+  value:
     - storageClassName: "local-sc"
       forceWipeDevicesAndDestroyAllData: true
       volumeMode: Block
