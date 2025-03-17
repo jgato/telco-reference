@@ -14,21 +14,29 @@ resources:
   - required/gitops/ztp-installation
 
 patches:
-  - target:
-      group: observability.open-cluster-management.io
-      version: v1beta2
-      kind: MultiClusterObservability
-      name: observability
-    path: overlays/storage-mco-patch.yaml
-  - target:
-      group: agent-install.openshift.io
-      version: v1beta1
-      kind: AgentServiceConfig
-      name: agent
-    path: overlays/options-agentserviceconfig-patch.yaml
+  # if you have LocalStorage operator, uncomment below and configure the
+  # patch
   - target:
       group: local.storage.openshift.io
       version: v1
       kind: LocalVolume
       name: local-disks
     path: overlays/loca-storage-disks-patch.yaml
+
+  # configure storage for MCO, it can difer depending on your configured
+  # storage
+  - target:
+      group: observability.open-cluster-management.io
+      version: v1beta2
+      kind: MultiClusterObservability
+      name: observability
+    path: overlays/storage-mco-patch.yaml
+
+  # configure Agent Service, it can difer depending on your configured
+  # storage and if disconnected or not
+  - target:
+      group: agent-install.openshift.io
+      version: v1beta1
+      kind: AgentServiceConfig
+      name: agent
+    path: overlays/options-agentserviceconfig-patch.yaml
