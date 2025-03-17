@@ -1,8 +1,5 @@
 - op: replace
-  path: "/spec/storageClassDevices"
+  path: "/spec/storageClassDevices/0/"
   value:
-    - storageClassName: "local-sc"
-      forceWipeDevicesAndDestroyAllData: true
-      volumeMode: Block
-      devicePaths:
-        - /dev/nvme1n1
+    devicePaths: #add the proper disks here
+      - /dev/nvme1n1
