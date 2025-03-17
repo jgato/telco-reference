@@ -1,5 +1,4 @@
 - op: replace
-  path: "/spec/storageClassDevices/0/"
-  value:
-    devicePaths: #add the proper disks here
-      - /dev/nvme1n1
+  path: "/spec/storageClassDevices/0/devicePaths"
+  value: # add all the available disks to be consumed by local-storage operator
+    - /dev/nvme1n1
