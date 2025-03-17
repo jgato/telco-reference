@@ -26,3 +26,9 @@ patches:
       kind: AgentServiceConfig
       name: agent
     path: overlays/options-agentserviceconfig-patch.yaml
+  - target:
+      group: local.storage.openshift.io
+      version: v1
+      kind: "LocalVolume"
+      name: local-disks
+    patch: overlays/loca-storage-disks-patch.yaml
