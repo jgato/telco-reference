@@ -4,7 +4,7 @@ kind: Kustomization
 
 resources:
   - ../../reference-crs/required/acm/
-
+  
 patches:
   # configure storage for MCO, it can difer depending on your configured
   # storage
@@ -22,11 +22,3 @@ patches:
       kind: AgentServiceConfig
       name: agent
     path: options-agentserviceconfig-patch.yaml
-
-  # configure mirror registry for ACM
-  - target:
-      group: ""
-      version: v1
-      kind: ConfigMap
-      name: mirror-registry-config
-    path: acmMirrorRegistryCM-patch.yaml
