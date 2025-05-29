@@ -5,56 +5,42 @@
 # every release
 #
 
-set -euo pipefail
+echo "###########################################################"
+echo "Following a list of the different configured subscriptions "
+echo "###########################################################"
+echo -e
 
-# Check for required tools
-for tool in yq cat grep find; do
-  if ! command -v "$tool" &>/dev/null; then
-    echo "Error: $tool is not installed." >&2
-    exit 1
-  fi
-done
+find ./configuration/reference-crs/ -type f \( -name "*.yaml" -o -name "*.yml" \) | xargs cat - | yq -r ' select(.kind == "Subscription") | .metadata.name + " channel " + .spec.channel'
 
-print_section(){
-  printf "\n###########################################################\n"
-  printf "%s\n" "$1"
-  printf "###########################################################\n\n"
+echo -e
+echo "###########################################################"
+echo "ztp-site-generate version inside ArgoCD "
+echo "###########################################################"
+echo -e
 
-}
-print_subscriptions(){
-  print_section "Following a list of the different configured subscriptions"
+cat ./configuration/reference-crs/required/gitops/ztp-installation/argocd-openshift-gitops-patch.json |  grep ztp-site-generator
 
-  find ./configuration/reference-crs/ -type f \( -name "*.yaml" -o -name "*.yml" \) \
-      | xargs cat - \
-      | yq -r 'select(.kind == "Subscription") | .metadata.name + " channel " + .spec.channel'
-}
+echo -e
+echo "###########################################################"
+echo "Disconnected imageset platform channels "
+echo "###########################################################"
+echo -e
 
-print_argocd_ztp_image(){
-  print_section "ztp-site-generate version inside ArgoCD"
+yq '.mirror.platform.channels' ./install/mirror-registry/imageset-config.yaml
 
-  grep -E 'ztp-site-generator|ztp-site-generate' ./configuration/reference-crs/required/gitops/ztp-installation/argocd-openshift-gitops-patch.json || true
-}
+echo -e
+echo "###########################################################"
+echo "Disconnected imageset version of operators "
+echo "###########################################################"
+echo -e
 
-print_disconnected_imageset_channels(){
-  print_section "Disconnected imageset platform channels"
+yq '.mirror.operators[].packages[] | .name + " " + .channels[].name' ./install/mirror-registry/imageset-config.yaml
 
-  yq '.mirror.platform.channels' ./install/mirror-registry/imageset-config.yaml
-}
+echo -e
+echo "###########################################################"
+echo "AgentServiceConfig configured images"
+echo "###########################################################"
+echo -e
 
-print_disconnected_imageset_operators(){
-  print_section "Disconnected imageset version of operators"
+yq '.spec.osImages[].openshiftVersion'  ./configuration/reference-crs/required/acm/acmAgentServiceConfig.yaml
 
-  yq '.mirror.operators[].packages[] | .name + " " + .channels[].name' ./install/mirror-registry/imageset-config.yaml
-}
-
-print_agentservice_images(){
-  print_section "AgentServiceConfig configured images"
-
-  yq '.spec.osImages[].openshiftVersion'  ./configuration/reference-crs/required/acm/acmAgentServiceConfig.yaml
-}
-
-print_subscriptions
-print_argocd_ztp_image
-print_disconnected_imageset_channels
-print_disconnected_imageset_operators
-print_agentservice_images
