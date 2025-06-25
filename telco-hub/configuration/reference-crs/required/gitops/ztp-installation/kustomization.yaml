@@ -8,3 +8,6 @@ resources:
   - gitops-cluster-rolebinding.yaml
   - clusters-app.yaml
   - policies-app.yaml
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "100"
