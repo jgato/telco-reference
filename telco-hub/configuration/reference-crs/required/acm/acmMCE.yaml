@@ -2,11 +2,7 @@ apiVersion: multicluster.openshift.io/v1
 kind: MultiClusterEngine
 metadata:
   annotations:
-<<<<<<< HEAD
     argocd.argoproj.io/sync-wave: "5"
-=======
-    argocd.argoproj.io/sync-wave: "4"
->>>>>>> 23b152d ([telco-hub] enable image-based-install-operator)
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   name: multiclusterengine
 spec:
