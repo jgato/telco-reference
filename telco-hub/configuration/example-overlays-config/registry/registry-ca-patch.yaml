@@ -1,0 +1,40 @@
+---
+- op: replace
+  path: "/data"
+  value:
+    registry.infra.el8k.se-lab.eng.rdu2.dc.redhat.com..8443: |
+      -----BEGIN CERTIFICATE-----
+      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
+      YGpVvM1Lav05C4Y=
+      -----END CERTIFICATE-----
