@@ -1,3 +1,4 @@
+---
 - op: replace
   path: /data/ca-bundle.crt
   value: |
@@ -9,7 +10,7 @@
     -----END CERTIFICATE-----
 - op: replace
   path: /data/registries.conf
-  value: |
+  value: |-
     unqualified-search-registries = ["registry.access.redhat.com", "docker.io"]
     [[registry]]
       prefix = ""
