@@ -3,3 +3,4 @@
   path: "/spec/storageClassDevices/0/devicePaths"
   value:  # add devices to be used by local storage operator
     - /dev/nvme1n1
+    - /dev/nvme0n1
