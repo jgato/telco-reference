@@ -3,27 +3,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - ../../reference-crs/required/acm/acmAgentServiceConfig.yaml
-  - ../../reference-crs/required/acm/acmMCE.yaml
-  - ../../reference-crs/required/acm/acmMCH.yaml
-  - ../../reference-crs/required/acm/acmMirrorRegistryCM.yaml
-  - ../../reference-crs/required/acm/acmNS.yaml
-  - ../../reference-crs/required/acm/acmOperGroup.yaml
-  - ../../reference-crs/required/acm/acmPerfSearch.yaml
-  - ../../reference-crs/required/acm/acmProvisioning.yaml
-  - ../../reference-crs/required/acm/acmSubscription.yaml
-  - ../../reference-crs/required/acm/kustomization.yaml
-  - ../../reference-crs/required/acm/observabilityMCO.yaml
-  - ../../reference-crs/required/acm/observabilityNS.yaml
-  - ../../reference-crs/required/acm/observabilityOBC.yaml
-  - ../../reference-crs/required/acm/observabilitySecret.yaml
-  - ../../reference-crs/required/acm/pullSecretMCSB.yaml
-  - ../../reference-crs/required/acm/pullSecretPlacementBinding.yaml
-  - ../../reference-crs/required/acm/pullSecretPlacement.yaml
-  - ../../reference-crs/required/acm/pullSecretPolicy.yaml
-  - ../../reference-crs/required/acm/thanosSecretPlacementBinding.yaml
-  - ../../reference-crs/required/acm/thanosSecretPlacement.yaml
-  - ../../reference-crs/required/acm/thanosSecretPolicy.yaml
+  - ../../reference-crs/required/acm/
 
 patches:
   # configure storage for MCO, it can difer depending on your configured
