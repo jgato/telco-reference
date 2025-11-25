@@ -3,11 +3,11 @@
   path: /spec/imageTagMirrors
   value:
   - mirrors:
-    - <registry.example.com:8443>/ubi8
+    - registry.infra.el8k.se-lab.eng.rdu2.dc.redhat.com:8443/ubi8
     source: registry.redhat.io/ubi8
   - mirrors:
-    - <registry.example.com:8443>/openshift4
+    - registry.infra.el8k.se-lab.eng.rdu2.dc.redhat.com:8443/openshift4
     source: registry.redhat.io/openshift4
   - mirrors:
-    - <registry.example.com:8443>/rhel8
+    - registry.infra.el8k.se-lab.eng.rdu2.dc.redhat.com:8443/rhel8
     source: registry.redhat.io/rhel8
