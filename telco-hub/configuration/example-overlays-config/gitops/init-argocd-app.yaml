@@ -5,3 +5,5 @@
     path: "telco-hub/configuration"
     repoURL: "https://github.com/jgato/telco-reference.git"
     targetRevision: "argocd-4.20"
+- op: remove
+  path: "/spec/syncPolicy"
