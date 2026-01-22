@@ -3,5 +3,5 @@
   path: /spec/imageTagMirrors
   value:
   - mirrors:
-    - <registry.example.com:8443>/openshift-release-dev
+    - registry.infra.el8k.se-lab.eng.rdu2.dc.redhat.com:8443/openshift-release-dev
     source: quay.io/openshift-release-dev
