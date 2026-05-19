@@ -1,22 +1,33 @@
 
 # Automated installation
-The full telco hub configuration can be applied using an ArgoCD application pointing to the kustomization.yaml in this directory.
 
-## Pre-requisites
-* An OpenShift cluster with the gitops-operator (ArgoCD) installed
-  * Note that the reference configuration includes a ClusterRole for ArgoCD which grants the necessary permissions for installing the remainder of the reference. This updates the currently running ArgoCD application to allow it to complete the full synchronization.
-* If ODF will be used in "internal" mode, nodes with available storage for ODF must be labeled
-  `cluster.ocs.openshift.io/openshift-storage=`
-* All files/directories in this tree are available in a git repository along with any necessary kustomize overlay for your environment.
-* Configured and existing Openshift CatalogSources for `redhat-operators-disconnected` and `certified-operators-disconnected`.
+The Telco Hub reference design provides a set of validated Custom Resources (CRs) in the `reference-crs/` directory. Rather than modifying those resources directly, the recommended approach is to use the Kustomize overlay layer in `example-overlays-config/` to apply your environment-specific customizations on top of them. An ArgoCD Application then deploys the full Telco Hub and continuously reconciles it via GitOps.
 
-## Init phase (install ArgoCD or Openshift GitOps)
+Refer to the [Telco Hub RDS documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/scalability_and_performance/telco-hub-ref-design-specs) for details on which components are optional or mandatory.
 
-This phase can be considered optional, in case you already have ArgoCD or Openshift GitOps running on your cluster.
+---
 
-ArgoCD is one of the main key components of the Telco Hub, because is in charge of managing deployment and configuration of the infrastructure managed by the Telco Hub, using a GitOps methodology. But, at the same time, we can deploy the Telco Hub using ArgoCD (recommended procedure). Therefore, to have a Telco Hub with ArgoCD, first, we have to have ArgoCD to create the Telco Hub. This is the init phase, and it is optional if you already fulfilled this requirement.
+## Prerequisites
 
-In this init phase we can install ArgoCD with the existing `reference-crs` for GitOps, basically using the Openshift GitOps operator. In case you want to proceed the installation with the existing `reference-crs` for GitOps: 
+- An OpenShift Container Platform (OCP) cluster is up and running.
+- OpenShift GitOps (ArgoCD) is installed on the cluster (see [Init phase](#init-phase-install-argocd-or-openshift-gitops) below if needed).
+- If using ODF in "internal" mode, nodes with available storage must be labeled:
+  ```bash
+  oc label node master-0 cluster.ocs.openshift.io/openshift-storage=
+  oc label node master-1 cluster.ocs.openshift.io/openshift-storage=
+  oc label node master-2 cluster.ocs.openshift.io/openshift-storage=
+  ```
+- Configured and existing OpenShift CatalogSources for `redhat-operators-disconnected` and `certified-operators-disconnected` (disconnected environments).
+
+---
+
+## Init phase (install ArgoCD or OpenShift GitOps)
+
+This phase is optional if you already have ArgoCD or OpenShift GitOps running on your cluster.
+
+ArgoCD is one of the main components of the Telco Hub: it manages deployment and configuration of the infrastructure using a GitOps methodology. At the same time, we use ArgoCD itself to deploy the Telco Hub (the recommended procedure). Therefore, to have a Telco Hub with ArgoCD, you first need ArgoCD running. This is the init phase.
+
+To install ArgoCD using the existing `reference-crs` for GitOps:
 
 ```bash
 oc apply -f reference-crs/required/gitops/clusterrole.yaml \
@@ -26,200 +37,239 @@ oc apply -f reference-crs/required/gitops/clusterrole.yaml \
   -f reference-crs/required/gitops/gitopsSubscription.yaml
 ```
 
-Wait the operator to be installed:
+Wait for the operator to be installed:
 
 ```bash
-> oc -n openshift-gitops-operator get subscriptions.operators.coreos.com openshift-gitops-operator -o jsonpath='{.status.state}'
+oc -n openshift-gitops-operator get subscriptions.operators.coreos.com \
+  openshift-gitops-operator -o jsonpath='{.status.state}'
+# Expected: AtLatestKnown
 
-AtLatestKnown
-
-> oc -n openshift-gitops-operator get pod
-NAME                                                         READY   STATUS    RESTARTS   AGE
-openshift-gitops-operator-controller-manager-d97fddc-9zmrn   2/2     Running   0          21m
-
-> oc -n openshift-gitops get pod
-NAME                                                          READY   STATUS    RESTARTS   AGE
-cluster-7b65f74f8f-sbx24                                      1/1     Running   0          37s
-gitops-plugin-7d8b6d777b-5npgj                                1/1     Running   0          37s
-kam-7bc6f69fcd-jrtgv                                          1/1     Running   0          37s
-openshift-gitops-application-controller-0                     1/1     Running   0          35s
-openshift-gitops-applicationset-controller-5cddb476fc-q5shw   1/1     Running   0          35s
-openshift-gitops-dex-server-954f978c9-2lp44                   1/1     Running   0          35s
-openshift-gitops-redis-7ff87f9b48-8ld9x                       1/1     Running   0          35s
-openshift-gitops-repo-server-6ccffb9695-pc8bj                 1/1     Running   0          35s
-openshift-gitops-server-845d6798-9c5tv                        1/1     Running   0          35s
+oc -n openshift-gitops get pod
+# All pods should be Running
 ```
 
-## Tune your own overlay layer
+> **Note:** The reference configuration includes a ClusterRole for ArgoCD which grants the necessary permissions for installing the remainder of the reference. This updates the currently running ArgoCD application to allow it to complete the full synchronization.
 
-Before creating the Telco Hub ArgoCD Application, you have to select the different optional component, and configure all of them.
+---
 
-At this point, you will need to fork this repo to tune the different kustomize patches and to select the optional components. There exists a root `kustomize.yaml` with all the information:
+## Step 1 -- Fork and set up your overlay
+
+Fork this repository and clone your fork. All your customizations will live in the overlay directory, keeping the upstream `reference-crs/` untouched.
+
+Rename the example overlay to your own:
+
+```bash
+cd telco-hub/configuration/
+mv example-overlays-config/ my-hub-overlay/
+```
+
+Update the root `kustomization.yaml` references accordingly:
+
+```bash
+sed -i 's/example-overlays-config/my-hub-overlay/g' kustomization.yaml
+```
+
+The root `kustomization.yaml` controls which components are deployed. Comment or uncomment entries depending on your environment:
 
 ```yaml
-# kustomization file including different overays over the
-# reference crs
----
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  # if you use LocalStorage operator, edit and configure the patch
-  - example-overlays-config/lso/
+  # (Optional) If you use LocalStorage operator, edit and configure the patch
+  - my-hub-overlay/lso/
 
-  # if you use ODF, edit and configure storage settings
-  - example-overlays-config/odf/
+  # (Optional) If you use ODF, edit and configure storage settings
+  - my-hub-overlay/odf/
 
-  # other not optional overlays
-  - example-overlays-config/gitops/
-  - example-overlays-config/acm/
+  # Required overlays
+  - my-hub-overlay/gitops/
+  - my-hub-overlay/acm/
+  - my-hub-overlay/registry/
 
-  # mandatory resources not managed by any overlay
+  # Mandatory resources not managed by any overlay
   - reference-crs/required/talm/
 
-  # include this content if you want to include the argocd
-  # configuration and apps for gitops ztp management of cluster
-  # installation and configuration
+  # (Optional) Include ArgoCD configuration for GitOps ZTP management
+  # of cluster installation and configuration
   # - reference-crs/required/gitops/ztp-installation
 ```
-Comment/uncomment the different optional components. For any of these directories, there could be optional configurations that needs to be set depending on your needs. The following sections describe the different options to configure.
 
-### (Optional) Configure the LocalStorage 
+---
 
-Edit the file `example-overlays-config/lso/local-storage-disks-patch.yaml` to use the disks you want to be used for the LocalStorage operator. Example:
+## Step 2 -- Configure your environment patches
 
+Each component directory contains patch files that must be updated with your environment-specific values. Work through each component you have enabled.
+
+### (Optional) LocalStorage Operator
+
+Edit `my-hub-overlay/lso/local-storage-disks-patch.yaml` to specify the physical disk devices on your nodes:
+
+```yaml
+- op: replace
+  path: /spec/storageClassDevices/0/devicePaths
+  value:
+    - /dev/nvme1n1
 ```
-# patching ODF StorageCluster
 
+### (Optional) ODF Storage
+
+Edit `my-hub-overlay/odf/options-storage-cluster.yaml` to set storage capacity and storage class:
+
+```yaml
 - op: replace
   path: /spec/storageDeviceSets/0/dataPVCTemplate/spec/resources/requests/storage
-  value: "600Gi"
+  value: "400Gi"
 
 - op: replace
   path: /spec/storageDeviceSets/0/dataPVCTemplate/spec/storageClassName
   value: "local-sc"
 ```
 
-### (Optional) Configure ODF 
-Edit the file `example-overlays-config/odf/options-storage-cluster.yaml` to configure the storage backend for ODF. Example:
+### Registry (disconnected environments)
+
+Edit the patch files in `my-hub-overlay/registry/` to configure your mirror registry:
+
+- `catalog-source-image-patch.yaml` -- Set the CatalogSource image URL pointing to your mirror:
+  ```yaml
+  - op: replace
+    path: /spec/image
+    value: <registry.example.com:8443>/openshift-marketplace/redhat-operators-disconnected:v4.x
+  ```
+
+- `registry-ca-patch.yaml` -- Add the CA certificate for your mirror registry:
+  ```yaml
+  - op: replace
+    path: "/data"
+    value:
+      registry.example.com..8443: |
+        -----BEGIN CERTIFICATE-----
+        ...
+        -----END CERTIFICATE-----
+  ```
+
+- `idms-operator-mirrors-patch.yaml`, `idms-release-mirrors-patch.yaml`, `itms-generic-mirrors-patch.yaml`, `itms-release-mirrors-patch.yaml` -- Update the mirror entries to point to your registry.
+
+### MultiClusterObservability Storage
+
+Edit `my-hub-overlay/acm/storage-mco-patch.yaml` to select a filesystem StorageClass:
 
 ```yaml
-# patching ODF StorageCluster
-
-- op: replace
-  path: /spec/storageDeviceSets/0/dataPVCTemplate/spec/resources/requests
-  value: "400Gi"
-
-- op: replace
-  path: /spec/storageDeviceSets/0/dataPVCTemplate/spec/resources/storageClassName
-  value: "local-sc"
-```
-
-### Configure the MultiClusterObservability Storage
-
-Edit the file `example-overlays-config/acm/storage-mco-patch.yaml` to select an StorageClass of kind FileSystem. Example:
-
-```yaml
-# patching mco StorageClass
-
 - op: replace
   path: /spec/storageConfig/storageClass
-  value: "ocs-storagecluster-cephfs" # filesystem StorageClass
+  value: "ocs-storagecluster-cephfs"
 ```
 
-### Configure AgentServiceConfig options
+### AgentServiceConfig
 
-Edit the file `options-agentserviceconfig-patch.yaml` to configure the different storage classes, for the different services. Set the RHCOS images to the proper repository, in case of disconnected, the one you are providing, in case of connected, you can use the Red Hat official ones. Also, if connected environment enable removal of the custom registry, because the spokes dont need to be feed with an internal registry.
+Edit `my-hub-overlay/acm/options-agentserviceconfig-patch.yaml` to configure storage classes and RHCOS image URLs. In disconnected environments, image URLs must point to your internal mirror registry:
+
 ```yaml
-# patching mco StorageClass
-
 - op: replace
   path: /spec/databaseStorage/storageClassName
-  value: "ocs-storagecluster-cephfs"  # filesystem StorageClass
+  value: "ocs-storagecluster-cephfs"
 
 - op: replace
   path: /spec/filesystemStorage/storageClassName
-  value: "ocs-storagecluster-cephfs"  # filesystem StorageClass
+  value: "ocs-storagecluster-cephfs"
 
 - op: replace
   path: /spec/imageStorage/storageClassName
-  value: "ocs-storagecluster-cephfs"  # filesystem StorageClass
+  value: "ocs-storagecluster-cephfs"
 
-  # Configure the osImages urls.
-  # When disconnected, the urls should point to a mirrored registry.
 - op: replace
   path: "/spec/osImages"
   value:
     - cpuArchitecture: x86_64
-      openshiftVersion: "4.16"
-      rootFSUrl: https://mirror.example.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.16/latest/rhcos-live-rootfs.x86_64.img
-      url: https://mirror.example.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.16/latest/rhcos-live.x86_64.iso
-      version: 416.94.202411261619-0
-    - cpuArchitecture: "x86_64"
-      openshiftVersion: "4.17"
-      rootFSUrl: https://mirror.example.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.17/latest/rhcos-live-rootfs.x86_64.img
-      url: https://mirror.example.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.17/latest/rhcos-live.x86_64.iso
-      version: "417.94.202409121747-0"
-    - cpuArchitecture: x86_64
-      openshiftVersion: "4.18"
-      rootFSUrl: https://mirror.example.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.18/latest/rhcos-live-rootfs.x86_64.img
-      url: https://mirror.example.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.18/latest/rhcos-live.x86_64.iso
-      version: 418.94.202502100215-0
-
-# when disconnected, the spoke clusters will need to use also a mirrored registry. That could be configured here:
-# https://issues.redhat.com/browse/CNF-17835
-
-# In case of connected enviroment we dont need neither to configure
-# nor use an internal registry on the spokes. So, uncomment below to remove it:
-# - op: remove
-#   path: /spec/mirrorRegistryRef
+      openshiftVersion: "4.x"
+      rootFSUrl: https://mirror.example.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.x/latest/rhcos-live-rootfs.x86_64.img
+      url: https://mirror.example.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.x/latest/rhcos-live-iso.x86_64.iso
+      version: <rhcos-version>
 ```
 
-### Configure the `hub-config` ArgoCD Application
-
-You have to edit the gitops patch overlay (`example-overlays-config/gitops/init-argocd-app.yaml`) to configure it properly. By default, it directly points to the upstream repository:
+In a connected environment, remove the `mirrorRegistryRef` from the spec to avoid routing spoke clusters through an internal registry unnecessarily. Uncomment the following in the patch file:
 
 ```yaml
-> cat required/gitops/overlays/init_installation_app.yaml
-- op: replace
-  path: "/spec/source"
-  value:
-    - repoURL: "telco-hub/configuration/reference-crs"
-      path: "https://github.com/openshift-kni/telco-reference.git"
-      targetRevision: "main"
+- op: remove
+  path: /spec/mirrorRegistryRef
 ```
 
-Make any necessary change. In general, you will point to the forked repository where you have been tuning your own overlay layer. Example:
+### GitOps TLS certificates
+
+If your git server uses a custom TLS certificate, edit `my-hub-overlay/gitops/argocd-tls-certs-cm-patch.yaml` to add the server certificate:
 
 ```yaml
 - op: replace
-  path: "/spec/source"
+  path: "/data"
   value:
-    - repoURL: "telco-hub/configuration/reference-crs"
-      path: "https://github.com/jgato/telco-reference.git"
-      targetRevision: "improve-automatization-overlays"
+    git.example.com: |
+      -----BEGIN CERTIFICATE-----
+      ...
+      -----END CERTIFICATE-----
 ```
 
-## Create the `hub-config` ArgoCD Application
+### Other overlays
 
-Having ArgoCD ready and the git repository with all the overlays configured. It is time to install the ArgoCD Application that will trigger the deployment of the telco hub.
+Additional overlay directories are available for optional components:
+
+- **cert-manager** (`my-hub-overlay/cert-manager/`) -- ACME issuer, ingress and API server certificates. See the [cert-manager overlay README](example-overlays-config/cert-manager/README.md) for details.
+- **logging** (`my-hub-overlay/logging/`) -- ClusterLogForwarder configuration (e.g., Kafka endpoint). See the [logging overlay README](example-overlays-config/logging/README.md) for details.
+
+To enable these, add them as resources in the root `kustomization.yaml`:
+
+```yaml
+  - my-hub-overlay/cert-manager/
+  - my-hub-overlay/logging/
+```
+
+---
+
+## Step 3 -- Configure the hub-config ArgoCD Application
+
+The `hub-config` ArgoCD Application is the central piece that ties everything together. It must point to **your fork**.
+
+Edit `my-hub-overlay/gitops/init-argocd-app.yaml`:
+
+```yaml
+- op: replace
+  path: "/spec/source"
+  value:
+    repoURL: "https://github.com/<your-org>/telco-reference.git"
+    path: "telco-hub/configuration"
+    targetRevision: "main"
+```
+
+Adjust `repoURL` and `targetRevision` to match your fork and branch.
+
+## Step 4 -- Validate your overlay with kustomize build
+
+Before bootstrapping ArgoCD, do a dry run to ensure your overlay builds without errors:
 
 ```bash
-> kustomize build example-overlays-config/gitops/ | oc apply -f -
-configmap/argocd-ssh-known-hosts-cm configured
-secret/ztp-repo created
-appproject.argoproj.io/infra created
-application.argoproj.io/hub-config created
+kustomize build .
 ```
 
+Review the rendered output and confirm all patches were applied correctly and no unexpected values remain from the example template.
 
-The ArgoCD application will be created on your cluster and will start installing and configuring all the needed Telco Hub components. Note that at this point the ArgoCD application is also being managed via gitops and any changes to the application should be done in git as well.
+If everything looks good, commit and push all your changes.
+
+---
+
+## Step 5 -- Bootstrap the hub-config ArgoCD Application
+
+Once all patches are configured and pushed, bootstrap the `hub-config` Application:
+
+```bash
+kustomize build my-hub-overlay/gitops/ | oc apply -f -
+```
+
+From this point on, ArgoCD takes full ownership. It will continuously reconcile the cluster against your overlay, deploying the complete Telco Hub configuration. Any future changes should be made in git -- not directly on the cluster.
 
 ## Sync-Wave Ordering
 
 All resources in the `reference-crs` directory are configured with ArgoCD sync-wave annotations to ensure deterministic and reliable rollout. The deployment follows this sequence:
 
 1. **Registry Foundation** (sync-wave -50): Registry and catalog configurations
-2. **Namespaces** (sync-wave -45): All namespace definitions  
+2. **Namespaces** (sync-wave -45): All namespace definitions
 3. **Namespaced Resources** (sync-wave -40): RBAC, ConfigMaps, OperatorGroups, Subscriptions
 4. **ArgoCD Resources** (sync-wave -35): AppProjects and Applications
 5. **Independent Custom Resources** (sync-wave -30): Core operators, infrastructure, and storage deployment
@@ -230,3 +280,15 @@ All resources in the `reference-crs` directory are configured with ArgoCD sync-w
 This ordering ensures all dependencies are properly resolved and aims at preventing race conditions during deployment.
 
 For detailed information about the sync-wave implementation, design principles, and complete file listings, see [SYNC-WAVES.md](SYNC-WAVES.md).
+
+---
+
+## Validating compliance with the reference design
+
+Adding custom patches may cause your cluster to deviate from the Telco Hub Reference Design. To verify compliance at any time, use the `cluster-compare` plugin against the `reference-crs-kube-compare` directory:
+
+```bash
+kubectl cluster-compare -r https://github.com/openshift-kni/telco-reference//telco-hub/configuration/reference-crs-kube-compare
+```
+
+This tool compares the live cluster state against the reference and reports any deviations.
