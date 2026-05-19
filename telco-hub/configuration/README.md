@@ -3,7 +3,7 @@
 
 The Telco Hub reference design provides a set of validated Custom Resources (CRs) in the `reference-crs/` directory. Rather than modifying those resources directly, the recommended approach is to use the Kustomize overlay layer in `example-overlays-config/` to apply your environment-specific customizations on top of them. An ArgoCD Application then deploys the full Telco Hub and continuously reconciles it via GitOps.
 
-Refer to the [Telco Hub RDS documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/scalability_and_performance/telco-hub-ref-design-specs) for details on which components are optional or mandatory.
+Refer to the [Telco Hub RDS documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html/scalability_and_performance/telco-hub-ref-design-specs) for details on which components are optional or mandatory.
 
 ---
 
@@ -54,7 +54,7 @@ oc -n openshift-gitops get pod
 
 ## Step 1 -- Fork and set up your overlay
 
-Fork this repository and clone your fork. All your customizations will live in the overlay directory, keeping the upstream `reference-crs/` untouched.
+Fork this repository and clone your fork. All your kustomizations will live in the overlay directory, keeping the upstream `reference-crs/` untouched.
 
 Rename the example overlay to your own:
 
@@ -96,9 +96,9 @@ resources:
 
 ---
 
-## Step 2 -- Configure your environment patches
+## Step 2 -- Configure your environment kustomization overlay
 
-Each component directory contains patch files that must be updated with your environment-specific values. Work through each component you have enabled.
+Each component, from your new directory, contains patch files that must be updated with your environment-specific values. Work through each component you have enabled.
 
 ### (Optional) LocalStorage Operator
 
